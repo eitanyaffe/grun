@@ -99,7 +99,7 @@ prepare_local:
 		--image_uri $(DOCKER_IMAGE) \
 		--job_env $(JOB_TAG) \
 		--run_script_path $(RUN_SCRIPT_PATH) \
-		--user_parameters $(USER_PARAMETERS) \
+		--user_parameters "$(USER_PARAMETERS)" \
 		--output_file $(RUN_LOCAL_SCRIPT)
 
 # run docker command

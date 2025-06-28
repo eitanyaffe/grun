@@ -248,7 +248,7 @@ grun download --job my-analysis
 Before running time-consuming cloud jobs, test locally:
 
 ```bash
-grun run_local --job test-local --input_file examples/files/some_table.txt
+grun run_local --job test-local --input_file examples/files/some_table.txt --ifn some_table.txt --param1 17
 ```
 
 This runs your job in a local Docker container, which is much faster for debugging.
