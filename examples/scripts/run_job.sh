@@ -27,7 +27,7 @@ mkdir -p "$(dirname "$LOG_FILE")"
     echo "Input file: $IFN"
 
     # replace this with job-specific parameters
-    echo "XXX: $XXX"
+    echo "PARAM1: $PARAM1"
 
     # replace this with your job code
     wc -l "$JOB_DIR/$IFN" > "$OUTPUT_DIR/result.txt"

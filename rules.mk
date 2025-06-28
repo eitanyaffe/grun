@@ -76,7 +76,7 @@ build_json:
 		--accelerator_type $(ACCELERATOR_TYPE) \
 		--accelerator_count $(ACCELERATOR_COUNT) \
 		--run_script_path $(RUN_SCRIPT_PATH) \
-		--user_parameters $(USER_PARAMETERS)
+		--user_parameters "$(USER_PARAMETERS)"
 
 # submit job
 submit: build_json

@@ -239,7 +239,7 @@ See `config.mk` for a complete list of variables.
 grun setup_docker    # Build and upload image (once only)
 grun setup_bucket    # Prepare bucket (once only)
 grun upload_file --job my-analysis --input_file examples/files/some_table.txt
-grun submit --job my-analysis --input some_table.txt --B 11
+grun submit --job my-analysis --ifn some_table.txt --param1 17
 grun download --job my-analysis
 ```
 
