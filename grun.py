@@ -123,8 +123,9 @@ def get_make_args(args, config_vars, unknown_args=None):
         if hasattr(args, arg_key) and getattr(args, arg_key) is not None:
             make_args.append(f"{key}={getattr(args, arg_key)}")
     
-    # process unknown arguments
+    # process unknown arguments into USER_PARAMETERS
     if unknown_args:
+        user_params = []
         i = 0
         while i < len(unknown_args):
             arg = unknown_args[i]
@@ -142,9 +143,13 @@ def get_make_args(args, config_vars, unknown_args=None):
                     else:
                         value = ""  # parameter without value
                 
-                # uppercase the parameter name and add to make args
-                make_args.append(f"{param_name.upper()}={value}")
+                # uppercase the parameter name and add to user_params
+                user_params.append(f"{param_name.upper()}={value}")
             i += 1
+        
+        # add USER_PARAMETERS if we have any unknown parameters
+        if user_params:
+            make_args.append(f'USER_PARAMETERS="{" ".join(user_params)}"')
     
     return make_args
     
