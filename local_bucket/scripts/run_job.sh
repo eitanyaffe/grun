@@ -1,23 +1,34 @@
 #!/bin/sh
 
 set -e -o pipefail
-trap 'echo "Command failed. Exiting."; exit 1' ERR
+trap 'echo "Command failed, exiting."; exit 1' ERR
 
-SCRIPTS_DIR=$MNT_DIR/scripts
-JOB_DIR=$MNT_DIR/jobs/$JOB
+# Define your log file
+LOG_FILE=$MNT_DIR/jobs/$JOB/output/run.log
 
-OUTPUT_DIR=$JOB_DIR/output
+# Create parent dir in advance if needed
+mkdir -p "$(dirname "$LOG_FILE")"
 
-echo "Running job: $JOB"
-echo "Mount directory: $MNT_DIR"
-echo "Output directory: $OUTPUT_DIR"
-echo "Scripts directory: $SCRIPTS_DIR"
+# Run everything inside this block and tee output
+{
+    SCRIPTS_DIR=$MNT_DIR/scripts
+    JOB_DIR=$MNT_DIR/jobs/$JOB
+    OUTPUT_DIR=$JOB_DIR/output
 
-# create output directory
-mkdir -p $OUTPUT_DIR
+    echo "Running job: $JOB"
+    echo "Mount directory: $MNT_DIR"
+    echo "Output directory: $OUTPUT_DIR"
+    echo "Scripts directory: $SCRIPTS_DIR"
 
-# script arguments
-echo "Input file: $INPUT" > $OUTPUT_DIR/run.log
-echo "B: $B" >> $OUTPUT_DIR/run.log
+    # create output directory
+    mkdir -p "$OUTPUT_DIR"
 
-wc -l $JOB_DIR/$INPUT > $OUTPUT_DIR/result.txt 2>&1 | tee $OUTPUT_DIR/run.log
+    # script arguments
+    echo "Input file: $IFN"
+
+    # replace this with job-specific parameters
+    echo "XXX: $XXX"
+
+    # replace this with your job code
+    wc -l "$JOB_DIR/$IFN" > "$OUTPUT_DIR/result.txt"
+} 2>&1 | tee "$LOG_FILE"

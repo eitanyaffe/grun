@@ -103,7 +103,8 @@ prepare_local:
 		--output_file $(RUN_LOCAL_SCRIPT)
 
 # run docker command
-run_local: prepare_local
+run_local: 
+	@$(MAKE) upload_code upload_file prepare_local RUN_LOCAL=T
 	bash $(RUN_LOCAL_SCRIPT)
 	@echo "Job completed, output in $(LOCAL_BUCKET_DIR)/jobs/$(JOB_TAG)/output"
 
