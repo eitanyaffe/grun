@@ -149,6 +149,10 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter
     )
     
+    # add global dry-run flag
+    parser.add_argument('-n', '--dry-run', action='store_true',
+                       help='Show commands that would be executed without running them')
+    
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     subparsers.required = True
 
@@ -160,6 +164,10 @@ def main():
             description=rule_data['description'],
             formatter_class=argparse.RawTextHelpFormatter
         )
+        
+        # add dry-run flag to each command
+        cmd_parser.add_argument('-n', '--dry-run', action='store_true',
+                              help='Show commands that would be executed without running them')
         
         # add config variables as arguments for each command
         for var, data in config_vars.items():
@@ -206,8 +214,14 @@ def main():
     args = parser.parse_args()
     make_args = get_make_args(args, config_vars)
     
+    # build the make command with optional dry-run flag
+    make_command = ['make']
+    if args.dry_run:
+        make_command.append('-n')
+    make_command.extend([args.command] + make_args)
+    
     # run the make command with the specified rule
-    run_command(['make', args.command] + make_args)
+    run_command(make_command)
 
 if __name__ == "__main__":
     main() 

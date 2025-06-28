@@ -10,7 +10,7 @@ To run a job with grun, you need:
 
 2. **A Dockerfile** - Defines your runtime environment with the tools and packages your job needs.
 
-3. **Input files** (optional) - Data files your job needs
+3. **Input files** (optional) - Data files your job needs.
 
 ## What grun Does
 
@@ -20,7 +20,7 @@ To run a job with grun, you need:
 4. **Submits** your job to Google Cloud Batch
 5. **Downloads** results to your local machine when complete
 
-grun also supports local execution for debugging and sanity checks before launching expensive cloud jobs.
+grun also supports local execution for debugging and sanity checks before launching cloud jobs.
 
 ## Prerequisites
 
@@ -36,13 +36,7 @@ gcloud auth application-default login
 ```
 
 ### Docker
-Install [Docker](https://docs.docker.com/engine/install/) and ensure it's running. On macOS:
-```bash
-open -a Docker
-```
-
-### Python 3
-Required for the grun wrapper script.
+Install [Docker](https://docs.docker.com/engine/install/) and ensure it's running.
 
 ### GCP Project Setup
 You need a Google Cloud Project with the necessary APIs enabled. Key services used:
@@ -100,13 +94,13 @@ This creates your GCS bucket and uploads the job script. **You only need to do t
 
 ### 3. Upload files (optional)
 ```bash
-grun upload_file --job my-test-job --input_file examples/files/some_table.txt
+grun upload_file --job grun-test --input_file examples/files/some_table.txt
 ```
 This uploads your input file to the job's directory in the bucket.
 
 ### 4. Submit a Job
 ```bash
-grun submit --job my-test-job
+grun submit --job grun-test
 ```
 This submits the job and waits for it to complete (default behavior).
 
@@ -117,14 +111,14 @@ If you run jobs asynchronously (with `--wait F`), you can monitor them:
 grun list_jobs
 
 # Check job files in the bucket
-grun show --job my-test-job
+grun show --job grun-test
 ```
 
 ### 6. Download Results
 ```bash
-grun download --job my-test-job
+grun download --job grun-test --output_dir output
 ```
-Results are downloaded to `output/my-test-job`. The output directory can be configured with the `OUTPUT_DIR` variable.
+Results are downloaded to `output/grun-test`.
 
 ## Creating Your Own Job
 
@@ -175,17 +169,20 @@ trap 'echo "Command failed. Exiting."; exit 1' ERR
 # $MNT_DIR - mount directory (/mnt/disks/share)
 # $JOB - job name
 # Custom variables from USER_PARAMETERS
+# $PARAM1 - custom parameter 1
+# $PARAM2 - custom parameter 2
 
 JOB_DIR=$MNT_DIR/jobs/$JOB
 OUTPUT_DIR=$JOB_DIR/output
 
-echo "Running analysis for job: $JOB"
+echo "running analysis for job: $JOB"
+echo "using parameters: PARAM1=$PARAM1, PARAM2=$PARAM2"
 mkdir -p $OUTPUT_DIR
 
 # Your computation here
 # Access input files: $JOB_DIR/input_file.txt
 # Write results to: $OUTPUT_DIR/results.txt
-python3 /my_code/analyze.py $JOB_DIR/data.csv > $OUTPUT_DIR/analysis.txt
+python3 /my_code/analyze.py $JOB_DIR/data.csv --param1 $PARAM1 --param2 $PARAM2 > $OUTPUT_DIR/analysis.txt
 ```
 
 ### 3. Update Configuration
