@@ -1,234 +1,246 @@
-# Evo2 on Google Cloud
+# Google Run (grun)
 
-This repository provides tools to run the Evo2 model on Google Cloud. It features a command-line wrapper, `evo_gcp.py`, that simplifies building a Docker container, managing cloud storage, submitting jobs to Google Cloud Batch, and downloading results.
+**grun** is a command-line tool that simplifies running computational jobs on Google Cloud Batch. Designed for researchers who want to leverage cloud computing without dealing with the complexities of Google Cloud Platform, grun handles Docker image building, cloud storage management, job submission, and result retrieval automatically.
+
+## What You Provide
+
+To run a job with grun, you need:
+
+1. **A bash script** - Your computational job (e.g., `run_job.sh`)
+2. **A Dockerfile** - Defines your runtime environment  
+3. **Input files** (optional) - Data files your job needs
+
+## What grun Does
+
+1. **Builds** your Docker image and uploads it to Google Container Registry (GCR)
+2. **Creates** a Google Cloud Storage bucket 
+3. **Uploads** your input files to the bucket
+4. **Submits** your job to Google Cloud Batch
+5. **Downloads** results to your local machine when complete
+
+grun also supports local execution for debugging and sanity checks before launching expensive cloud jobs.
 
 ## Prerequisites
 
-1.  **[Google Cloud SDK](https://cloud.google.com/sdk/docs/install)**: `gcloud` and `gsutil` must be installed. Make sure you are authenticated:
-    ```bash
-    gcloud auth login
-    ```
-2.  **[Docker](https://docs.docker.com/engine/install/)**: The Docker daemon must be installed and running. On macOS, you can start Docker by running:
-    ```bash
-    open -a Docker
-    ```
-3.  **Python 3**: Required for the `evo_gcp.py` wrapper.
-4.  **GCP Project**: You need a Google Cloud Project with the necessary APIs and permissions enabled. See [docs/google.md](./docs/google.md) for instructions on enabling APIs and setting up user roles.
-
-The tool was tested on macOS 13.3.1 with Python 3.9.6 and Docker 28.2.2.
-
-### Google Cloud Configuration
-
-Set up your Google Cloud environment:
-
+### Google Cloud SDK
+Install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and authenticate:
 ```bash
 # Initialize gcloud and log in
 gcloud init
+gcloud auth login
 
-# Authorize application-level credentials (used by scripts/libraries)
+# Authorize application-level credentials (used by scripts)
 gcloud auth application-default login
 ```
 
-### Python Dependencies
-
-Install the required Python packages:
+### Docker
+Install [Docker](https://docs.docker.com/engine/install/) and ensure it's running. On macOS:
 ```bash
-pip install --upgrade huggingface-hub google google-api-python-client google-cloud-storage
+open -a Docker
 ```
+
+### Python 3
+Required for the grun wrapper script.
+
+### GCP Project Setup
+You need a Google Cloud Project with the necessary APIs enabled. Key services used:
+- Google Cloud Batch API
+- Google Container Registry API  
+- Google Cloud Storage API
+
+For detailed instructions on setting up user permissions and enabling APIs, see [google.md](google.md).
 
 ## Installation
 
-First, clone the repository to your local machine:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/eitanyaffe/grun.git
+   cd grun
+   ```
+
+2. **Set the environment variable:**
+   Add this to your shell configuration (e.g., `~/.zshrc`, `~/.bashrc`):
+   ```bash
+   export GRUN_DIR=/path/to/your/grun
+   ```
+   Reload your shell: `source ~/.zshrc`
+
+3. **Configure your project:**
+   Edit `config.mk` to set your GCP project ID and other defaults:
+   ```bash
+   # Edit these key variables
+   GCP_PROJECT=your-project-id
+   LOCATION=us-central1
+   ```
+
+## Quick Start
+
+Let's walk through running the included example job:
+
+### 1. Build and Upload Docker Image
 ```bash
-git clone git@github.com:eitanyaffe/evo2_gcp.git
-cd evo2_gcp
+./grun.py setup_docker
 ```
+This builds the Docker image from `examples/docker/basic_ubuntu/Dockerfile` and pushes it to GCR.
 
-### Environment Variable
-
-The wrapper script needs to know the location of this repository. Set the `GRUN_DIR` environment variable to the absolute path of the project's root directory.
-
-Add this line to your shell's configuration file (e.g., `~/.zshrc`, `~/.bash_profile`):
+### 2. Set Up Cloud Storage
 ```bash
-export GRUN_DIR=/path/to/your/evo2_gcp
+./grun.py setup_bucket
 ```
-Remember to reload your shell (e.g., `source ~/.zshrc`) or open a new terminal for the change to take effect.
+This creates your GCS bucket and uploads the job script.
 
-> [!TIP]
-> To determine which shell you are using, run `echo $SHELL` in your terminal. Common shells include:
-> - `/bin/zsh` (Zsh - default on macOS Catalina and later)
-> - `/bin/bash` (Bash - default on many Linux distributions)
-> - `/bin/sh` (Bourne shell)
-> 
-> Once you know your shell, you can add the environment variable to the appropriate configuration file:
-> - For Zsh: `~/.zshrc`
-> - For Bash: `~/.bash_profile` or `~/.bashrc`
-> - For other shells: check their documentation for the correct configuration file
-
-### Project Settings (`config.mk`)
-
-You can configure project-wide settings, such as the Google Cloud region and bucket name, by editing the `config.mk` file. These values can also be overridden at runtime using command-line arguments (e.g., `--region <REGION>`).
-
-### Install Wrapper (Optional)
-
-For convenience, you can install the `evo_gcp.py` script to a system directory, allowing you to run it from anywhere.
-```bash
-# This may require superuser privileges
-make install
-```
-This installs the script as `evo_gcp`. If you choose not to install it, you can run it directly from the repository root as `./evo_gcp.py`. To see a full list of commands and options, run `evo_gcp --help`.
-
-## Workflow
-
-The typical workflow involves a one-time setup followed by running jobs.
-
-### 1. One-Time Setup
-
-First, build the Docker image and set up the Google Cloud Storage bucket. This prepares your cloud environment, uploads the Evo2 model, and syncs the source code.
-
-To build the docker image run:
-```bash
-# Build the Docker image and push it to Google Container Registry
-evo_gcp docker_image
-```
-> [!TIP]
-> Building the image is time consuming. If you have access to an existing one you can skip this step by setting `DOCKER_IMAGE` in the `config.mk` file.
-
-To prepare the bucket run:
-```bash
-# Create the GCS bucket and upload the model and code
-evo_gcp setup_bucket
-```
-
-### 2. Running a Job
-
-To run the model, submit a job with a name and an input FASTA file. The primary input for the model is a FASTA file, which must be specified for each job using the `--input_fasta` flag.
+### 3. Upload files (optional)
 
 ```bash
-# Submit a job and wait for it to complete
-evo_gcp submit --job my-first-run --input_fasta examples/gyrA_sensitive.fasta --wait
+./grun.py upload_file --job my-test-job --input_file examples/files/some_table.txt
 ```
+This uploads your input file.
 
-The `--wait` flag makes the command block until the job finishes. If you run a job without it, you can monitor its status using the following commands.
 
-### 3. Monitoring Jobs
-
-List all active jobs:
+### 4. Submit a Job
 ```bash
-evo_gcp list_jobs
+./grun.py submit --job my-test-job --input_file examples/files/some_table.txt --wait T
 ```
+This uploads your input file, submits the job, and returns after the job completed.
 
-View the remote files for a specific job:
+### 5. Monitor the Job
+
+Relevant if jobs were run asynchronsiously (with `--wait F`).
 ```bash
-evo_gcp show --job my-first-run
+# List all jobs
+./grun.py list_jobs
+
+# Check job files in the bucket
+./grun.py show --job my-test-job
 ```
 
-### 4. Downloading Results
-
-Once a job has succeeded, download its output files.
+### 5. Download Results
 ```bash
-evo_gcp download --job my-first-run
+./grun.py download --job my-test-job
 ```
-By default, results are downloaded to `jobs/<JOB_NAME>/output`. You can specify a different parent directory with the `--jobs_dir` argument:
-```bash
-evo_gcp download --job my-first-run --jobs_dir /path/to/your/jobs
+Results are downloaded to `output/my-test-job/`. The output directory can be determined with the `OUTPUT_DIR` variable.
+
+## Creating Your Own Job
+
+### 1. Create a Dockerfile (once)
+Define your runtime environment:
+
+```dockerfile
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && apt-get clean
+
+COPY my_code/ /my_code/
+RUN pip3 install -r /my_code/requirements.txt
+
+CMD ["bash"]
 ```
-This would save results to `/path/to/your/jobs/my-first-run/output`.
 
+### 2. Create a Job Script
 
-### 5. Understanding Output Files
+Your job script accesses files using environment variables:
+- `$MNT_DIR` - Mount directory (`/mnt/disks/share`)
+- `$JOB` - Job name (`my-test-job-v1`)
+- Custom parameters from `USER_PARAMETERS`
 
-When a job completes successfully, the output directory contains several files:
-
-- **`run_evo.log`**: A detailed log file containing the execution trace and processing progress for each sequence.
-
-- **`input_<sequence_id>_logits.npy`**: For each sequence in your input FASTA file, a NumPy file containing the model's logits (raw output scores). The filename includes the sequence identifier from the FASTA header.
-
-- **`input_<sequence_id>_embeddings_<layer_name>.npy`**: If you requested embeddings using the `--include_embedding` flag, additional NumPy files containing the embeddings from the specified layers. The filename includes both the sequence identifier and the layer name.
-
-For example, if your FASTA contains a sequence with header `>Ecoli_gyrA_WT` and you requested embeddings from the `blocks.28.mlp.l3` layer, you would get:
-- `input_Ecoli_gyrA_WT_logits.npy` - the logits for this sequence
-- `input_Ecoli_gyrA_WT_embeddings_blocks_28_mlp_l3.npy` - the embeddings from the specified layer
-
-The logits are always included in the output, while embeddings are only generated when explicitly requested.
-
-
-## Parameters
-
-You can customize the behavior of `evo_gcp` by modifying its parameters. There are two ways to set them:
-
-1.  **Global Configuration (`config.mk`)**: For settings that you want to apply to all jobs, edit the `config.mk` file. This is the best way to set project-wide defaults like your `GCP_PROJECT` or preferred `MACHINE_TYPE`.
-2.  **Command-Line Arguments**: For settings specific to a single command, you can override any variable from `config.mk`. The command-line flag is generated by converting the variable name to lowercase and prepending `--`. For example, `MODEL_NAME` becomes `--model_name`.
-
-### Examples
-
-**Per-Job Change (Command-Line)**
-
-If you want to run a job with a specific input file without changing the default, use the `--input_fasta` flag:
+Create a bash script that performs your computation:
 
 ```bash
-evo_gcp submit --job my-sensitive-run --input_fasta examples/gyrA_sensitive.fasta
+#!/bin/bash
+# my_analysis.sh
+
+set -e -o pipefail
+trap 'echo "Command failed. Exiting."; exit 1' ERR
+
+# Environment variables available:
+# $MNT_DIR - mount directory (/mnt/disks/share)
+# $JOB - job name
+# Custom variables from USER_PARAMETERS
+
+JOB_DIR=$MNT_DIR/jobs/$JOB
+OUTPUT_DIR=$JOB_DIR/output
+
+echo "Running analysis for job: $JOB"
+mkdir -p $OUTPUT_DIR
+
+# Your computation here
+# Access input files: $JOB_DIR/input_file.txt
+# Write results to: $OUTPUT_DIR/results.txt
+python3 /my_code/analyze.py $JOB_DIR/data.csv > $OUTPUT_DIR/analysis.txt
 ```
 
-**Global Change (`config.mk`)**
-
-If you want to use a different model for all subsequent jobs, you can change the `MODEL_NAME` in `config.mk`:
-```makefile
-# in config.mk
-...
-MODEL_NAME?=evo2_40b
-...
+### 3. Update Configuration
+Edit `config.mk` to point to your files:
+```bash
+RUN_SCRIPT=path/to/my_analysis.sh
+DOCKER_DIR=path/to/my_dockerfile_dir
+INPUT_FILE=path/to/my_data.csv
+USER_PARAMETERS="PARAM1=value1 PARAM2=value2"
 ```
-Now, any `evo_gcp submit` command will use `evo2_40b` unless overridden by the `--model_name` flag.
+See `config.mk` for a complete list of variables.
+### 4. Run Your Job
+```bash
+./grun.py setup_docker    # Build and upload image
+./grun.py setup_bucket    # Prepare bucket
+./grun.py upload_file --job my-analysis --input_file my_data.csv
+./grun.py submit --job my-analysis
+./grun.py download --job my-analysis
+```
 
-### Available Parameters
+## Local Testing
 
-Here is a list of all available parameters and their descriptions (see `config.mk`).
+Before running time-consuming cloud jobs, test locally:
 
-#### Google and docker parameters ####
+```bash
+./grun.py run_local --job test-local --input_file examples/files/some_table.txt
+```
 
-| Variable               | Description                                                 |
-| ---------------------- | ----------------------------------------------------------- |
-| `GCP_PROJECT`          | GCP project ID.                                             |
-| `LOCATION`             | GCP location for the bucket and batch jobs.                 |
-| `IMAGE_NAME`           | Short Docker image name.                                    |
-| `UBUNTU_VERSION`       | Docker image Ubuntu version.                                |
-| `CUDA_VERSION`         | Docker image CUDA version.                                  |
-| `DOCKER_IMAGE`         | Full Docker image name for Google Container Registry.       |
-| `BUCKET_NAME`          | Google Cloud Storage bucket name.                           |
+This runs your job in a local Docker container, which is much faster for debugging.
 
-#### General evo parameters ####
+## Configuration
 
-| Variable               | Description                                                 |
-| ---------------------- | ----------------------------------------------------------- |
-| `MODEL_NAME`           | The Evo 2 model name to use.                                |
-| `MACHINE_TYPE`         | The GCP machine type for the job (e.g., `a3-highgpu-1g`).   |
-| `ACCELERATOR_TYPE`     | The accelerator type (e.g., `nvidia-h100-80gb`).            |
-| `ACCELERATOR_COUNT`    | The number of accelerators to attach.                       |
+All settings in `config.mk` can be overridden via command-line arguments. For example:
 
-#### Job-specific parameters ####
+```bash
+# Override machine type for a specific job
+./grun.py submit --job big-job --machine_type n1-highcpu-16
 
-| Variable               | Description                                                 |
-| ---------------------- | ----------------------------------------------------------- |
-| `JOB`                  | A unique string identifier for a job.                       |
-| `JOB_VERSION`          | The job version, allowing the same job to be run multiple times. |
-| `INPUT_FASTA`          | The input FASTA file for a job.                             |
-| `WAIT`                 | When used with `submit`, blocks until the job completes.    |
-| `INCLUDE_EMBEDDING`    | Whether to include embeddings in the output.                |
-| `EMBEDDING_LAYERS`     | Specific layers to use for embeddings.                      |
-| `JOBS_DIR`             | The local directory for storing downloaded job results.     |
+# Use different input file
+./grun.py submit --job test --input_file my_other_data.txt
+```
 
-## Implementation Details
+Run `./grun.py --help` to see all available commands and options.
 
-The `evo_gcp.py` script is a user-friendly wrapper around a `makefile`. It reads variables from `config.mk` and makes them available as command-line arguments. For example, `evo_gcp submit --job test` constructs and executes the corresponding `make` command (`make submit JOB=test`) behind the scenes.
+### Key Configuration Variables
 
-This design provides a simple, accessible interface without requiring knowledge of `make` syntax. For a detailed explanation of the `makefile` implementation, see [docs/makefile.md](./docs/makefile.md).
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GCP_PROJECT` | Your Google Cloud Project ID | - |
+| `LOCATION` | GCP region for resources | `us-central1` |
+| `MACHINE_TYPE` | Compute instance type | `n1-standard-4` |
+| `DOCKER_DIR` | Directory containing Dockerfile | `examples/docker/basic_ubuntu` |
+| `RUN_SCRIPT` | Path to your job script | `examples/scripts/run_job.sh` |
+| `INPUT_FILE` | Default input file | `examples/files/some_table.txt` |
+| `USER_PARAMETERS` | Custom variables for your script | `"INPUT=... B=..."` |
 
-## Key Files and Directories
+## Available Commands
 
--   `evo_gcp.py`: The main command-line wrapper for interacting with Google Cloud.
--   `makefile`: Defines the core commands for building, deploying, and managing jobs.
--   `config.mk`: Contains default configuration variables (e.g., `PROJECT_ID`, `BUCKET_NAME`).
--   `jobs/`: The default local directory for storing downloaded job results.
--   `examples/`: Contains sample FASTA files for testing.
--   `docs/`: Contains additional documentation.
+- `setup_docker` - Build and upload Docker image
+- `create_bucket` - Create GCS bucket  
+- `upload_code` - Upload job script to bucket
+- `setup_bucket` - Combined: create bucket + upload code
+- `upload_file` - Upload input file to bucket
+- `submit` - Submit job (includes file upload and JSON generation)
+- `run_local` - Run job locally for testing
+- `download` - Download job results
+- `list_jobs` - List all batch jobs
+- `show` - Show files in job bucket directory
+
+## Implementation
+
+grun is implemented as a Python wrapper around a makefile system. The `grun.py` script automatically discovers available commands from `rules.mk` and converts makefile variables in `config.mk` into command-line arguments. This design provides a user-friendly interface while maintaining the flexibility and power of make for job orchestration.
+
+When you run a grun command, it constructs and executes the corresponding `make` command with your specified parameters. For example, `./grun.py submit --job test` becomes `make submit JOB=test` internally. 

@@ -59,7 +59,7 @@ else
 	cp $(INPUT_FILE) $(LOCAL_BUCKET_DIR)/jobs/$(JOB_TAG)/$(INPUT_FILE_SHORT)
 endif
 
-# build json file
+## build json file
 build_json:
 	mkdir -p $(JOB_DIR)
 	python3 scripts/build_json.py \

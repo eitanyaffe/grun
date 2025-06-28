@@ -15,10 +15,10 @@ LOCATION?=us-central1
 # directory with dockerfile
 DOCKER_DIR?=examples/docker/basic_ubuntu
 
-# docker image name, shared is a shared image that is used by all jobs
+# docker image name, by default used by all jobs
 IMAGE_NAME?=shared
 
-# docker image name
+## docker image name
 DOCKER_IMAGE?=gcr.io/$(GCP_PROJECT)/$(USER)/grun-$(IMAGE_NAME)
 
 #####################################################################################
@@ -47,7 +47,7 @@ RUN_SCRIPT?=examples/scripts/run_job.sh
 # input file
 INPUT_FILE?=examples/files/some_table.txt
 
-# input file short name
+## input file short name
 INPUT_FILE_SHORT?=$(shell basename $(INPUT_FILE))
 
 # wait for job to complete (TRUE or FALSE)

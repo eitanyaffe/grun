@@ -14,6 +14,7 @@ def parse_config_vars(config_path):
     """
     vars = {}
     last_comment = ""
+    skip_next = False
     try:
         with open(config_path, 'r') as f:
             for line in f:
@@ -21,27 +22,80 @@ def parse_config_vars(config_path):
 
                 if not line:
                     last_comment = ""  # Reset on empty lines
+                    skip_next = False
                     continue
 
                 if line.startswith('#'):
-                    # Capture the comment, removing '#' and leading space
+                    # check if comment starts with ## before stripping
+                    skip_next = line.startswith('##')
+                    # capture the comment, removing '#' and leading space
                     last_comment = line.lstrip('#').strip()
                     continue
 
                 match = re.match(r'^([A-Z_]+)\s*\??=\s*(.*)', line)
                 if match:
                     key, value = match.groups()
-                    vars[key] = {
-                        'value': value.strip(),
-                        'description': last_comment
-                    }
+                    # skip variables with skip flag set
+                    if not skip_next:
+                        vars[key] = {
+                            'value': value.strip(),
+                            'description': last_comment.capitalize() if last_comment else last_comment
+                        }
                     last_comment = "" # Reset after use
+                    skip_next = False
     except FileNotFoundError:
         # Since we hard-code config.mk, this is a fatal error for the script's setup
         print(f"Error: Main config file not found at '{config_path}'", file=sys.stderr)
         print("This file is required to define available arguments.", file=sys.stderr)
         sys.exit(1)
     return vars
+
+def parse_makefile_rules(rules_path):
+    """
+    Parses a makefile and returns a dict of rules.
+    It captures the comment immediately above each rule as its description.
+    """
+    rules = {}
+    last_comment = ""
+    skip_next = False
+    try:
+        with open(rules_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+
+                if not line:
+                    last_comment = ""  # reset on empty lines
+                    skip_next = False
+                    continue
+
+                if line.startswith('#'):
+                    # check if comment starts with ## before stripping
+                    skip_next = line.startswith('##')
+                    # capture the comment, removing '#' and leading space
+                    last_comment = line.lstrip('#').strip()
+                    continue
+
+                # match makefile rules (target:)
+                match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*:', line)
+                if match:
+                    target = match.group(1)
+                    # skip rules with skip flag set
+                    if not skip_next:
+                        description = last_comment.capitalize() if last_comment else f"Execute the {target} make target"
+                        rules[target] = {
+                            'description': description
+                        }
+                    last_comment = ""  # reset after use
+                    skip_next = False
+                elif not line.startswith('\t'):
+                    # reset comment if we encounter a non-rule, non-comment, non-indented line
+                    last_comment = ""
+                    skip_next = False
+    except FileNotFoundError:
+        print(f"Error: Rules file not found at '{rules_path}'", file=sys.stderr)
+        print("This file is required to define available commands.", file=sys.stderr)
+        sys.exit(1)
+    return rules
 
 def run_command(command):
     cmd_str = ' '.join(command)
@@ -77,7 +131,7 @@ def main():
         print("Error: The environment variable GRUN_DIR is not set.", file=sys.stderr)
         print("Please set it to the root directory of the grun project.", file=sys.stderr)
         print("For example, add this to your .zshrc or .bashrc:", file=sys.stderr)
-        print("export GRUN_DIR=/path/to/your/grun", file=sys.stderr)
+        print(f"export GRUN_DIR={os.getcwd()}", file=sys.stderr)
         sys.exit(1)
 
     try:
@@ -86,79 +140,46 @@ def main():
         print(f"Error: The directory specified by GRUN_DIR does not exist: {GRUN_DIR}", file=sys.stderr)
         sys.exit(1)
 
-    # Hard-code the use of the main config file for variable definitions and descriptions.
+    # parse config variables and makefile rules
     config_vars = parse_config_vars('config.mk')
+    makefile_rules = parse_makefile_rules('rules.mk')
     
     parser = argparse.ArgumentParser(
-        description="A Python script for grun.\n",
+        description="grun: Launch jobs on Google Cloud Batch.\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
     
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     subparsers.required = True
 
-    # Command descriptions
-    command_descriptions = {
-        'docker_image': 'Builds the Docker image and pushes it to Google Container Registry (GCR).\nIt uses the IMAGE_NAME and DOCKER_IMAGE variables from your config.',
-        'create_bucket': 'Creates the GCS bucket specified by BUCKET_NAME in the configured LOCATION.',
-        'setup_bucket': 'A combo command that creates the bucket, uploads the model, and uploads the code.\nThis runs the `create_bucket`, `upload_model`, and `upload_code` commands in sequence.',
-        'upload_model': 'Uploads the specified ML model to the GCS bucket.',
-        'upload_code': 'Uploads the `scripts` and `configs` directories to the GCS bucket.',
-        'upload_fasta': 'Uploads a specific FASTA file to the job directory in the GCS bucket.\nRequires --input_fasta.',
-        'build_json': 'Builds the job.json configuration file for a batch job.',
-        'submit': 'Submits a job to Google Cloud Batch.\nThis combines `upload_code`, `upload_fasta`, and `build_json` before submitting.\nUse --wait to block until the job completes.',
-        'download': 'Downloads the output of a completed job from the GCS bucket into the local `jobs` directory.',
-        'list_jobs': 'Lists all Google Cloud Batch jobs in the configured GCP location.',
-        'show': 'Shows the contents of the remote job directory in the GCS bucket.'
-    }
-
-    # Dynamically add commands and their arguments
-    commands = [
-        'docker_image', 'create_bucket', 'upload_model', 'upload_code', 
-        'upload_fasta', 'build_json', 'submit', 'download', 'list_jobs', 'show'
-    ]
-    
-    combo_commands = {
-        'setup_bucket': ['create_bucket', 'upload_model', 'upload_code']
-    }
-    
-    all_commands = commands + list(combo_commands.keys())
-    
-    for cmd in all_commands:
+    # dynamically add commands from makefile rules
+    for rule_name, rule_data in makefile_rules.items():
         cmd_parser = subparsers.add_parser(
-            cmd,
-            help=command_descriptions.get(cmd, f'Execute the {cmd} make target.').split('\n')[0],
-            description=command_descriptions.get(cmd, f'Execute the {cmd} make target.'),
+            rule_name,
+            help=rule_data['description'],
+            description=rule_data['description'],
             formatter_class=argparse.RawTextHelpFormatter
         )
         
-        # Keep track of arguments added to this subparser to avoid conflicts
-        added_args = set()
-
-        if cmd == 'submit':
-            cmd_parser.add_argument('--wait', action='store_true', help='Wait for the job to complete.')
-            added_args.add('--wait')
-
+        # add config variables as arguments for each command
         for var, data in config_vars.items():
             arg_name = f'--{var.lower()}'
-            if arg_name not in added_args:
-                help_text = data.get('description') or f"Overrides {var}."
-                default_val_str = f" Default: {data.get('value')}"
-                help_text += default_val_str
-                cmd_parser.add_argument(arg_name, help=help_text)
-                added_args.add(arg_name)
+            help_text = data.get('description') or f"Overrides {var}."
+            default_val_str = f" Default: {data.get('value')}"
+            help_text += default_val_str
+            cmd_parser.add_argument(arg_name, help=help_text)
     
-    # If run without arguments, print help and exit
+    # if run without arguments, print help and exit
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         print("\nConfiguration Arguments (from config.mk):", file=sys.stderr)
         
         if config_vars:
-            # Evaluate default values by calling make for each variable
+            # evaluate default values by calling make for each variable
             evaluated_defaults = {}
             for var in config_vars.keys():
                 try:
-                    # Use the generic 'print-VAR' rule now in the makefile
+                    # use the generic 'print-VAR' rule now in the makefile
                     command = ['make', '-s', f'print-{var}']
                     result = subprocess.run(
                         command,
@@ -169,10 +190,10 @@ def main():
                     )
                     evaluated_defaults[var] = result.stdout.strip()
                 except (subprocess.CalledProcessError, FileNotFoundError):
-                    # If make fails, fall back to the raw value from the config file
+                    # if make fails, fall back to the raw value from the config file
                     evaluated_defaults[var] = config_vars[var].get('value', 'N/A')
 
-            # Calculate padding for alignment
+            # calculate padding for alignment
             max_len = max(len(f'--{var.lower()}') for var in config_vars.keys())
             for var, data in config_vars.items():
                 arg_name = f'--{var.lower()}'
@@ -185,14 +206,8 @@ def main():
     args = parser.parse_args()
     make_args = get_make_args(args, config_vars)
     
-    if args.command in combo_commands:
-        for target in combo_commands[args.command]:
-            run_command(['make', target] + make_args)
-    else:
-        command_to_run = ['make', args.command] + make_args
-        if args.command == 'submit' and args.wait:
-            command_to_run.append('WAIT=true')
-        run_command(command_to_run)
+    # run the make command with the specified rule
+    run_command(['make', args.command] + make_args)
 
 if __name__ == "__main__":
     main() 
