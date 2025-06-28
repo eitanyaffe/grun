@@ -232,8 +232,6 @@ Edit `config.mk` to point to your files:
 ```bash
 RUN_SCRIPT=path/to/my_analysis.sh
 DOCKER_DIR=path/to/my_dockerfile_dir
-INPUT_FILE=path/to/my_data.csv
-USER_PARAMETERS="PARAM1=value1 PARAM2=value2"
 ```
 See `config.mk` for a complete list of variables.
 ### 4. Run Your Job
@@ -241,7 +239,7 @@ See `config.mk` for a complete list of variables.
 grun setup_docker    # Build and upload image (once only)
 grun setup_bucket    # Prepare bucket (once only)
 grun upload_file --job my-analysis --input_file my_data.csv
-grun submit --job my-analysis
+grun submit --job my-analysis --param1=value1 --param2=value2
 grun download --job my-analysis
 ```
 

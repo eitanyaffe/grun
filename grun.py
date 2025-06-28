@@ -114,14 +114,38 @@ def run_command(command):
         print("\nInterrupted by user.", file=sys.stderr)
         sys.exit(130)
 
-def get_make_args(args, config_vars):
+def get_make_args(args, config_vars, unknown_args=None):
     """Constructs a list of KEY=VALUE strings for make."""
     make_args = []
-    # We only need the keys from the config_vars to check against args
+    # process known config variables
     for key in config_vars.keys():
         arg_key = key.lower()
         if hasattr(args, arg_key) and getattr(args, arg_key) is not None:
             make_args.append(f"{key}={getattr(args, arg_key)}")
+    
+    # process unknown arguments
+    if unknown_args:
+        i = 0
+        while i < len(unknown_args):
+            arg = unknown_args[i]
+            if arg.startswith('--'):
+                # extract parameter name and value
+                param_name = arg[2:]  # remove '--'
+                if '=' in param_name:
+                    # handle --param=value format
+                    param_name, value = param_name.split('=', 1)
+                else:
+                    # handle --param value format
+                    if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith('--'):
+                        value = unknown_args[i + 1]
+                        i += 1  # skip the value in next iteration
+                    else:
+                        value = ""  # parameter without value
+                
+                # uppercase the parameter name and add to make args
+                make_args.append(f"{param_name.upper()}={value}")
+            i += 1
+    
     return make_args
     
 def main():
@@ -140,6 +164,19 @@ def main():
         print(f"Error: The directory specified by GRUN_DIR does not exist: {GRUN_DIR}", file=sys.stderr)
         sys.exit(1)
 
+    # manually detect and remove dry-run flags from anywhere in the arguments
+    dry_run = False
+    filtered_argv = []
+    for arg in sys.argv:
+        if arg in ['-n', '--dry-run']:
+            dry_run = True
+        else:
+            filtered_argv.append(arg)
+    
+    # temporarily replace sys.argv for argparse
+    original_argv = sys.argv
+    sys.argv = filtered_argv
+
     # parse config variables and makefile rules
     config_vars = parse_config_vars('config.mk')
     makefile_rules = parse_makefile_rules('rules.mk')
@@ -148,10 +185,6 @@ def main():
         description="grun: Launch jobs on Google Cloud Batch.\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
-    
-    # add global dry-run flag
-    parser.add_argument('-n', '--dry-run', action='store_true',
-                       help='Show commands that would be executed without running them')
     
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     subparsers.required = True
@@ -165,10 +198,6 @@ def main():
             formatter_class=argparse.RawTextHelpFormatter
         )
         
-        # add dry-run flag to each command
-        cmd_parser.add_argument('-n', '--dry-run', action='store_true',
-                              help='Show commands that would be executed without running them')
-        
         # add config variables as arguments for each command
         for var, data in config_vars.items():
             arg_name = f'--{var.lower()}'
@@ -180,6 +209,7 @@ def main():
     # if run without arguments, print help and exit
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
+        print("\nDry-run option: -n, --dry-run (can be placed anywhere in the command)", file=sys.stderr)
         print("\nConfiguration Arguments (from config.mk):", file=sys.stderr)
         
         if config_vars:
@@ -209,14 +239,24 @@ def main():
                 default_val = evaluated_defaults.get(var, 'N/A')
                 print(f"  {arg_name:<{max_len + 2}} {description} (Default: {default_val})", file=sys.stderr)
 
+        print("\nNote: Additional parameters not defined in config.mk can be passed and will be", file=sys.stderr)
+        print("automatically uppercased and forwarded to make (e.g., --custom_param=value becomes CUSTOM_PARAM=value)", file=sys.stderr)
+        
+        # restore original argv before exit
+        sys.argv = original_argv
         sys.exit(0)
 
-    args = parser.parse_args()
-    make_args = get_make_args(args, config_vars)
+    # use parse_known_args to allow unknown arguments
+    args, unknown_args = parser.parse_known_args()
+    
+    # restore original argv
+    sys.argv = original_argv
+    
+    make_args = get_make_args(args, config_vars, unknown_args)
     
     # build the make command with optional dry-run flag
     make_command = ['make']
-    if args.dry_run:
+    if dry_run:
         make_command.append('-n')
     make_command.extend([args.command] + make_args)
     
