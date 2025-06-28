@@ -263,14 +263,8 @@ You can configure grun in two ways:
 All settings in `config.mk` can be overridden via command-line arguments. For example:
 
 ```bash
-# Override machine type for a specific job
-grun submit --job big-job --machine_type n1-highcpu-16
-
-# Increase disk size for large datasets
-grun submit --job data-job --disk_size_gb 500
-
-# Use different input file
-grun submit --job test --input_file my_other_data.txt
+# Override machine type and disk size for a specific job
+grun submit --job big-job --machine_type n1-highcpu-16 --disk_size_gb 500
 ```
 
 Run `grun --help` to see all available commands and options.
