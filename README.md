@@ -238,8 +238,8 @@ See `config.mk` for a complete list of variables.
 ```bash
 grun setup_docker    # Build and upload image (once only)
 grun setup_bucket    # Prepare bucket (once only)
-grun upload_file --job my-analysis --input_file my_data.csv
-grun submit --job my-analysis --param1=value1 --param2=value2
+grun upload_file --job my-analysis --input_file examples/files/some_table.txt
+grun submit --job my-analysis --input some_table.txt --B 11
 grun download --job my-analysis
 ```
 

@@ -47,14 +47,11 @@ RUN_SCRIPT?=examples/scripts/run_job.sh
 # input file
 INPUT_FILE?=examples/files/some_table.txt
 
-## input file short name
-INPUT_FILE_SHORT?=$(shell basename $(INPUT_FILE))
-
 # wait for job to complete (TRUE or FALSE)
 WAIT?=T
 
 # user-defined parameters
-USER_PARAMETERS?="INPUT=$(INPUT_FILE_SHORT) B=11"
+USER_PARAMETERS?="IFN=some_table.txt XXX=11"
 
 #####################################################################################
 # runtime and output parameters

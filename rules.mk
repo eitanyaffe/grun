@@ -50,6 +50,9 @@ JOB_DIR?=jobs/$(JOB_TAG)
 # job json
 JOB_JSON?=$(JOB_DIR)/job.json
 
+## input file short name
+INPUT_FILE_SHORT?=$(shell basename $(INPUT_FILE))
+
 # upload file to bucket
 upload_file:
 ifeq ($(RUN_LOCAL),F)

@@ -17,10 +17,10 @@ echo "Scripts directory: $SCRIPTS_DIR"
 mkdir -p $OUTPUT_DIR
 
 # script arguments
-echo "Input file: $INPUT" > $OUTPUT_DIR/run.log
+echo "Input file: $IFN" > $OUTPUT_DIR/run.log
 
 # replace this with job-specific parameters
-echo "B: $B" >> $OUTPUT_DIR/run.log
+echo "XXX: $XXX" >> $OUTPUT_DIR/run.log
 
 # replace this with your job code
-wc -l $JOB_DIR/$INPUT > $OUTPUT_DIR/result.txt
+wc -l $JOB_DIR/$IFN > $OUTPUT_DIR/result.txt
