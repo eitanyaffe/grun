@@ -120,6 +120,48 @@ grun download --job grun-test --output_dir output
 ```
 Results are downloaded to `output/grun-test`.
 
+## Command Syntax
+
+grun uses a simple command-based syntax:
+
+```bash
+grun <command> [options]
+```
+
+### Basic Usage
+- **Get help**: `grun` (shows all available commands and configuration options)
+- **Run a command**: `grun submit --job my-job`
+- **Dry run**: `grun --dry-run submit --job my-job` (shows what would be executed)
+
+### Commands
+Commands are automatically discovered from the makefile rules. Common commands include:
+- `setup_docker` - Build and upload Docker image
+- `setup_bucket` - Create bucket and upload scripts
+- `submit` - Submit a job to Google Cloud Batch
+- `download` - Download job results
+- `list_jobs` - List all jobs
+
+### Arguments
+Configuration arguments are automatically generated from `config.mk`. Each variable becomes a command-line option:
+- `GCP_PROJECT` becomes `--gcp_project`
+- `MACHINE_TYPE` becomes `--machine_type`
+- `INPUT_FILE` becomes `--input_file`
+
+### Examples
+```bash
+# Use default configuration
+grun submit --job my-analysis
+
+# Override specific settings
+grun submit --job my-analysis --machine_type n1-highcpu-16 --disk_size_gb 200
+
+# Preview commands without executing
+grun --dry-run setup_docker
+
+# Get help and see all available options
+grun
+```
+
 ## Creating Your Own Job
 
 ### 1. Create a Dockerfile (once only)
