@@ -280,7 +280,7 @@ Run `grun --help` to see all available commands and options.
 | `DOCKER_DIR` | Directory containing Dockerfile | `examples/docker/basic_ubuntu` |
 | `RUN_SCRIPT` | Path to your job script | `examples/scripts/run_job.sh` |
 | `INPUT_FILE` | Default input file | `examples/files/some_table.txt` |
-| `USER_PARAMETERS` | Custom variables for your script | `"INPUT=... B=..."` |
+| `USER_PARAMETERS` | Custom variables for your script | `"IFN=... PARAM1=..."` |
 | `OUTPUT_DIR` | Local directory for downloaded results | `output` |
 
 ## Directory Structure
