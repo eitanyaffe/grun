@@ -118,6 +118,12 @@ grun download --job grun-test --output_dir output
 ```
 Results will be downloaded to `output/grun-test`.
 
+## Customize Your Own Job
+
+You can define your runtime environment with the tools and packages your job needs by implementing a dockefile. See this example of a [dockerfile file](examples/docker/basic_ubuntu/Dockerfile).
+
+You need to implement a single bash script that will perform the work on the cloud, see this [example](examples/scripts/run_job.sh).
+
 ## Command Syntax
 
 grun uses a simple command-based syntax:
@@ -166,12 +172,6 @@ grun clean --job_tag old-test     # Delete specific job (with confirmation)
 # Get help and see all available options
 grun
 ```
-
-## Customize Your Own Job
-
-You can define your runtime environment with the tools and packages your job needs by implementing a dockefile. See this example of a [dockerfile file](examples/docker/basic_ubuntu/Dockerfile).
-
-You need to implement a single bash script that will perform the work on the cloud, see this [example](examples/scripts/run_job.sh).
 
 ## Local Testing
 
