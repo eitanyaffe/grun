@@ -100,7 +100,7 @@ def parse_makefile_rules(rules_path):
 def run_command(command):
     cmd_str = ' '.join(command)
     header_text = f"# running command: {cmd_str}"
-    hash_line = "#" * len(header_text)
+    hash_line = "#" * (2 + len(header_text))
     print(hash_line)
     print(header_text)
     print(hash_line)
