@@ -237,7 +237,7 @@ python3 /my_code/analyze.py $JOB_DIR/data.csv --param1 $PARAM1 --param2 $PARAM2 
 ### 3. Update Configuration
 Edit `config.mk` to point to your files:
 ```bash
-INPUT_PATH=path/to/my_analysis.sh
+INPUT_SCRIPT=path/to/my_analysis.sh
 DOCKER_DIR=path/to/my_dockerfile_dir
 ```
 See `config.mk` for a complete list of variables.
@@ -285,7 +285,7 @@ Run `grun --help` to see all available commands and options.
 | `MACHINE_TYPE` | Compute instance type | `n1-standard-4` |
 | `DISK_SIZE_GB` | Boot disk size in GB | `100` |
 | `DOCKER_DIR` | Directory containing Dockerfile | `examples/docker/basic_ubuntu` |
-| `INPUT_PATH` | Path to your job script | `examples/scripts/run_job.sh` |
+| `INPUT_SCRIPT` | Path to your job script | `examples/scripts/run_job.sh` |
 | `INPUT_FILE` | Default input file | `examples/files/some_table.txt` |
 | `USER_PARAMETERS` | Custom variables for your script | `"IFN=... PARAM1=..."` |
 | `OUTPUT_DIR` | Local directory for downloaded results | `output` |

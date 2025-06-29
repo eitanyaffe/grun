@@ -22,15 +22,15 @@ create_bucket:
 	gsutil ls -b gs://$(BUCKET_NAME) >/dev/null 2>&1 || gsutil mb -l $(LOCATION) gs://$(BUCKET_NAME)
 
 # path to script in container
-SCRIPT_PATH?=scripts/$(shell basename $(INPUT_PATH))
+SCRIPT_PATH?=scripts/$(shell basename $(INPUT_SCRIPT))
 
 # upload script to bucket (can run multiple times with different scripts)
 upload_code:
 ifeq ($(RUN_LOCAL),F)
-	gsutil -m cp $(INPUT_PATH) gs://$(BUCKET_NAME)/$(SCRIPT_PATH)
+	gsutil -m cp $(INPUT_SCRIPT) gs://$(BUCKET_NAME)/$(SCRIPT_PATH)
 else
 	mkdir -p $(LOCAL_BUCKET_DIR)/scripts
-	cp $(INPUT_PATH) $(LOCAL_BUCKET_DIR)/$(SCRIPT_PATH)
+	cp $(INPUT_SCRIPT) $(LOCAL_BUCKET_DIR)/$(SCRIPT_PATH)
 endif
 
 # setup bucket and upload code
