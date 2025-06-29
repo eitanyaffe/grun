@@ -120,9 +120,13 @@ Results will be downloaded to `output/grun-test`.
 
 ## Customize Your Own Job
 
-You can define your runtime environment with the tools and packages your job needs by implementing a dockefile. See this example of a [dockerfile file](examples/docker/basic_ubuntu/Dockerfile).
+You can define your runtime environment with the tools and packages your job needs by creating a Dockerfile. A Dockerfile is a text file that contains instructions for building a Docker image. See this example of a basic [dockerfile](examples/docker/basic_ubuntu/Dockerfile) and learn more about [writing Dockerfiles](https://docs.docker.com/get-started/docker-concepts/building-images/writing-a-dockerfile/).
 
-You need to implement a single bash script that will perform the work on the cloud, see this [example](examples/scripts/run_job.sh).
+You need to implement a single bash script that will perform the work on the cloud. This script should:
+- Accept parameters passed via environment variables
+- Create output directories and files as needed
+
+See this [example](examples/scripts/run_job.sh) for a complete working script.
 
 ## Command Syntax
 
