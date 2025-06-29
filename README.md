@@ -217,21 +217,6 @@ Run `grun --help` to see all available commands and options.
 | `USER_PARAMETERS` | Custom variables for your script | `"IFN=... PARAM1=..."` |
 | `OUTPUT_DIR` | Local directory for downloaded results | `output` |
 
-## Available Commands
-
-- `setup_docker` - Build and upload Docker image
-- `create_bucket` - Create GCS bucket  
-- `upload_code` - Upload job script to bucket
-- `setup_bucket` - Combined: create bucket + upload code
-- `upload_file` - Upload input file to bucket
-- `submit` - Submit job (includes file upload and JSON generation)
-- `run_local` - Run job locally for testing
-- `download` - Download job results
-- `list_jobs` - List all batch jobs
-- `show` - Show files in job bucket directory
-- `space` - Show space usage per job in bucket
-- `clean` - Delete jobs from bucket (with confirmation)
-
 ## Directory Structure
 
 When you run a job, grun creates this structure in your GCS bucket:
