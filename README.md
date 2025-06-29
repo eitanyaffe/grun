@@ -220,29 +220,29 @@ trap 'echo "Command failed. Exiting."; exit 1' ERR
 # $MNT_DIR - mount directory (/mnt/disks/share)
 # $JOB - job name
 # Custom variables from USER_PARAMETERS
-# $PARAM1 - custom parameter 1
-# $PARAM2 - custom parameter 2
+# $IFN - input filename
+# $PARAM - custom parameter
 
 JOB_DIR=$MNT_DIR/jobs/$JOB
 OUTPUT_DIR=$JOB_DIR/output
 
 echo "running analysis for job: $JOB"
-echo "using parameters: PARAM1=$PARAM1, PARAM2=$PARAM2"
+echo "using parameters: IFN=$IFN, PARAM=$PARAM"
 mkdir -p $OUTPUT_DIR
 
-# Your computation here, analyze.py needs to be uploaded beforehand using the upload_code commands
-# Access input files: $JOB_DIR/some_table.txt
-# Write results to: $OUTPUT_DIR/results.txt
-python3 $MNT_DIR/scripts/analyze.py --input $JOB_DIR/some_table.txt --param1 $PARAM1 --param2 $PARAM2 --output $OUTPUT_DIR/analysis.txt
+# Your computation here, analyze.py needs to be uploaded before-hand using the upload_code command
+python3 $MNT_DIR/scripts/analyze.py --input $IFN --param $PARAM --output $OUTPUT_DIR/result.txt
 ```
+
+See `examples/scripts/run.sh` for a working example of a script.
 
 ### 3. Run Your Job
 ```bash
-grun setup_docker    # Build and upload image (once only)
-grun setup_bucket --user_script examples/scripts/run_job.sh    # Prepare bucket (once only)
-grun setup_bucket --user_script examples/scripts/analyze.py    # Upload auxilary script (once only)
+grun setup_docker
+grun setup_bucket --user_script examples/scripts/run_job.sh
+grun upload_code --user_script examples/scripts/analyze.py # upload aux script
 grun upload_file --job my-analysis --input_file examples/files/some_table.txt
-grun submit --job my-analysis --ifn some_table.txt --param1 17
+grun submit --job my-analysis --ifn some_table.txt --param1 17  --param2 101
 grun download --job my-analysis
 ```
 
