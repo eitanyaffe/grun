@@ -29,22 +29,13 @@ Install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and au
 ```bash
 # Initialize gcloud and log in
 gcloud init
-gcloud auth login
-
-# Authorize application-level credentials (used by scripts)
-gcloud auth application-default login
 ```
 
 ### Docker
 Install [Docker](https://docs.docker.com/engine/install/) and ensure it's running.
 
 ### GCP Project Setup
-You need a Google Cloud Project with the necessary APIs enabled. Key services used:
-- Google Cloud Batch API
-- Google Container Registry API  
-- Google Cloud Storage API
-
-For detailed instructions on setting up user permissions and enabling APIs, see [google.md](google.md).
+You need a Google Cloud Project with the necessary APIs enabled. For detailed instructions on setting up user permissions and enabling APIs, see [google.md](google.md).
 
 ## Installation
 
@@ -54,19 +45,20 @@ For detailed instructions on setting up user permissions and enabling APIs, see 
    cd grun
    ```
 
-2. **Set the environment variable:**
+2. **Install the command:**
+   For convenience, install grun to your system:
+   ```bash
+   make install
+   ```
+   This installs `grun` to `/usr/local/bin`, allowing you to run `grun` from anywhere instead of `./grun.py`.
+
+3. **Set the environment variable:**
    Add this to your shell configuration (e.g., `~/.zshrc`, `~/.bashrc`):
    ```bash
    export GRUN_DIR=/path/to/your/grun
    ```
    Reload your shell: `source ~/.zshrc`
 
-3. **Install the command (optional):**
-   For convenience, install grun to your system:
-   ```bash
-   make install
-   ```
-   This installs `grun` to `/usr/local/bin`, allowing you to run `grun` from anywhere instead of `./grun.py`.
 
 4. **Configure your project:**
    Edit `config.mk` to set your GCP project ID and other defaults:
@@ -82,9 +74,9 @@ Let's walk through running the included example job:
 
 ### 1. Build and Upload Docker Image (once only)
 ```bash
-grun setup_docker
+grun setup_docker --docker_dir examples/docker/basic_ubuntu
 ```
-This builds the Docker image from `examples/docker/basic_ubuntu/Dockerfile` and pushes it to GCR. **You only need to do this once** unless you change your Dockerfile.
+This builds the Docker image from `examples/docker/basic_ubuntu/Dockerfile` (replace with your docker directory) and pushes it to GCR. **You only need to do this once** unless you change your Dockerfile.
 
 ### 2. Set Up Cloud Storage (once only)
 ```bash
@@ -92,30 +84,31 @@ grun setup_bucket --user_script examples/scripts/run_job.sh
 ```
 This creates your GCS bucket and uploads the job script. **You only need to do this once** - the bucket persists and each job gets its own directory.
 
-### 3. Upload files and auxilary scripts (optional)
-```bash
-grun upload_file --job grun-test --input_file examples/files/some_table.txt
-```
-This uploads a file to the job's directory in the bucket.
-
+You can upload auxilary scripts:
 ```bash
 grun upload_code --user_script examples/scripts/analyze.py
 ```
 This uploads a script input file to the script directory in the bucket.
 
+### 3. Upload other files (optional)
+```bash
+grun upload_file --job grun-test --input_file examples/files/some_table.txt
+```
+This uploads a file to the job directory in the bucket for job `grun-test`.
+
 ### 4. Submit a Job
 ```bash
-grun submit --job grun-test
+grun submit --job grun-test --wait T
 ```
-This submits the job and waits for it to complete (default behavior).
+This submits job `grun-test` and waits for it to complete.
 
 ### 5. Monitor the Job (if running asynchronously)
-If you run jobs asynchronously (with `--wait F`), you can monitor them:
+You can monitor job statuses:
 ```bash
 # List all jobs
 grun list_jobs
 
-# Check job files in the bucket
+# Show list of job files in the bucket
 grun show --job grun-test
 ```
 
@@ -123,7 +116,7 @@ grun show --job grun-test
 ```bash
 grun download --job grun-test --output_dir output
 ```
-Results are downloaded to `output/grun-test`.
+Results will be downloaded to `output/grun-test`.
 
 ## Command Syntax
 
@@ -136,7 +129,7 @@ grun <command> [options]
 ### Basic Usage
 - **Get help**: `grun` (shows all available commands and configuration options)
 - **Run a command**: `grun submit --job my-job`
-- **Dry run**: `grun --dry-run submit --job my-job` (shows what would be executed)
+- **Dry run**: `grun submit --job my-job --dry-run` (shows what would be executed, also works with `-n`)
 
 ### Commands
 Commands are automatically discovered from the makefile rules. Common commands include:
@@ -174,86 +167,15 @@ grun clean --job_tag old-test     # Delete specific job (with confirmation)
 grun
 ```
 
-## Creating Your Own Job
+## Customize Your Own Job
 
-### 1. Create a Dockerfile (once only)
-Define your runtime environment with the tools and packages your job needs.
+You can define your runtime environment with the tools and packages your job needs by implementing a dockefile. See this example of a [examples/docker/basic_ubuntu/dockerfile(dockerfile file).
 
-Example of dockerfile:
-
-```dockerfile
-FROM ubuntu:22.04
-
-# Install system packages
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    git \
-    curl \
-    && apt-get clean
-
-# Install a code repository
-RUN git clone https://github.com/your-username/your-analysis-repo.git /workspace
-WORKDIR /workspace
-
-# Install Python dependencies
-RUN pip3 install -r requirements.txt
-
-# Install additional tools as needed
-RUN pip3 install pandas numpy scipy scikit-learn
-
-CMD ["bash"]
-```
-
-### 2. Create a Job Script
-
-Your job script accesses files using environment variables:
-- `$MNT_DIR` - Mount directory (`/mnt/disks/share`)
-- `$JOB` - Job name (`my-test-job-v1`)
-- Custom parameters from `USER_PARAMETERS`
-
-Create a bash script that performs your computation:
-
-```bash
-#!/bin/bash
-# my_analysis.sh
-
-set -e -o pipefail
-trap 'echo "Command failed. Exiting."; exit 1' ERR
-
-# Environment variables available:
-# $MNT_DIR - mount directory (/mnt/disks/share)
-# $JOB - job name
-# Custom variables from USER_PARAMETERS
-# $IFN - input filename
-# $PARAM - custom parameter
-
-JOB_DIR=$MNT_DIR/jobs/$JOB
-OUTPUT_DIR=$JOB_DIR/output
-
-echo "running analysis for job: $JOB"
-echo "using parameters: IFN=$IFN, PARAM=$PARAM"
-mkdir -p $OUTPUT_DIR
-
-# Your computation here, analyze.py needs to be uploaded before-hand using the upload_code command
-python3 $MNT_DIR/scripts/analyze.py --input $IFN --param $PARAM --output $OUTPUT_DIR/result.txt
-```
-
-See `examples/scripts/run.sh` for a working example of a script.
-
-### 3. Run Your Job
-```bash
-grun setup_docker
-grun setup_bucket --user_script examples/scripts/run_job.sh
-grun upload_code --user_script examples/scripts/analyze.py # upload aux script
-grun upload_file --job my-analysis --input_file examples/files/some_table.txt
-grun submit --job my-analysis --ifn some_table.txt --param1 17  --param2 101
-grun download --job my-analysis
-```
+You need to implement a single bash script that will perform the work on the cloud, see this [examples/scripts/run_job.sh](example).
 
 ## Local Testing
 
-Before running time-consuming cloud jobs, test locally:
+Before running a job on the cloud you can test it locally:
 
 ```bash
 grun run_local --job test-local --input_file examples/files/some_table.txt --ifn some_table.txt --param1 17
@@ -263,7 +185,7 @@ This runs your job in a local Docker container, which is much faster for debuggi
 
 ## Configuration
 
-You can configure grun in two ways:
+You can configure grun parameters in two ways:
 
 1. **Permanently** - Edit `config.mk` to change defaults for all jobs
 2. **Per-run** - Use command-line arguments to override settings for specific jobs
