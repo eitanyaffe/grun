@@ -92,11 +92,16 @@ grun setup_bucket --user_script examples/scripts/run_job.sh
 ```
 This creates your GCS bucket and uploads the job script. **You only need to do this once** - the bucket persists and each job gets its own directory.
 
-### 3. Upload files (optional)
+### 3. Upload files and auxilary scripts (optional)
 ```bash
 grun upload_file --job grun-test --input_file examples/files/some_table.txt
 ```
-This uploads your input file to the job's directory in the bucket.
+This uploads a file to the job's directory in the bucket.
+
+```bash
+grun upload_code --user_script examples/scripts/analyze.py
+```
+This uploads a script input file to the script directory in the bucket.
 
 ### 4. Submit a Job
 ```bash
