@@ -44,8 +44,8 @@ JOB_TAG?=$(JOB)-$(JOB_VERSION)
 # run locally (TRUE or FALSE)
 RUN_LOCAL?=F
 
-# wrapper script sh path in container
-RUN_SCRIPT?=examples/scripts/run_job.sh
+# user-specified script
+INPUT_PATH?=examples/scripts/run_job.sh
 
 # input file
 INPUT_FILE?=examples/files/some_table.txt
