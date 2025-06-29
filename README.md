@@ -128,6 +128,16 @@ You need to implement a single bash script that will perform the work on the clo
 
 See this [example](examples/scripts/run_job.sh) for a complete working script.
 
+## Local Testing
+
+Before running a job on the cloud you can test it locally:
+
+```bash
+grun run_local --job test-local --input_file examples/files/some_table.txt --ifn some_table.txt --param1 17
+```
+
+This runs your job in a local Docker container, which is much faster for debugging.
+
 ## Command Syntax
 
 grun uses a simple command-based syntax:
@@ -176,16 +186,6 @@ grun clean --job_tag old-test     # Delete specific job (with confirmation)
 # Get help and see all available options
 grun
 ```
-
-## Local Testing
-
-Before running a job on the cloud you can test it locally:
-
-```bash
-grun run_local --job test-local --input_file examples/files/some_table.txt --ifn some_table.txt --param1 17
-```
-
-This runs your job in a local Docker container, which is much faster for debugging.
 
 ## Configuration
 
