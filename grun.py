@@ -99,7 +99,11 @@ def parse_makefile_rules(rules_path):
 
 def run_command(command):
     cmd_str = ' '.join(command)
-    print(f"Running command: {cmd_str}")
+    header_text = f"# running command: {cmd_str}"
+    hash_line = "#" * len(header_text)
+    print(hash_line)
+    print(header_text)
+    print(hash_line)
     try:
         exit_code = os.system(cmd_str)
         # os.system returns a 16-bit encoded value: high byte is signal, low byte is exit code
