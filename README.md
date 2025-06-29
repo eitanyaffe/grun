@@ -219,7 +219,6 @@ Run `grun --help` to see all available commands and options.
 
 ## Directory Structure
 
-### Cloud Bucket Structure
 When you run a job, grun creates this structure in your GCS bucket:
 ```
 gs://your-bucket/
