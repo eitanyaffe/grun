@@ -23,12 +23,12 @@ mkdir -p "$(dirname "$LOG_FILE")"
     # create output directory
     mkdir -p "$OUTPUT_DIR"
 
-    # script arguments
-    echo "Input file: $IFN"
+    # NOTE: replace below with your job code
 
-    # replace this with job-specific parameters
+    # script arguments, defined by USER_PARAMETERS
+    echo "Input file: $IFN"
     echo "PARAM1: $PARAM1"
 
-    # replace this with your job code
+    # this is a placeholder for your job code
     wc -l "$JOB_DIR/$IFN" > "$OUTPUT_DIR/result.txt"
 } 2>&1 | tee "$LOG_FILE"

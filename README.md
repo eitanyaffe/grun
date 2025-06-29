@@ -231,17 +231,7 @@ gs://your-bucket/
         └── output/        # Job results (created by your script)
 ```
 
-### Container Environment
-Inside the running container, files are mounted at `/mnt/disks/share`:
-```
-/mnt/disks/share/
-├── scripts/
-│   └── run_job.sh         # Your job script
-└── jobs/
-    └── my-test-job-v1/    # Job directory
-        ├── some_table.txt # Input files
-        └── output/        # Write results here
-```
+Inside the running docker container, the bukcet is mounted at `/mnt/disks/share`.
 
 ## Available Commands
 
