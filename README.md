@@ -152,7 +152,7 @@ grun <command> [options]
 - **Dry run**: `grun submit --job my-job --dry-run` (shows what would be executed, also works with `-n`)
 
 ### Commands
-Commands are automatically discovered from the makefile rules. Common commands include:
+Common commands include:
 - `setup_docker` - Build and upload Docker image
 - `setup_bucket` - Create bucket and upload scripts
 - `submit` - Submit a job to Google Cloud Batch
