@@ -169,7 +169,7 @@ grun
 
 ## Customize Your Own Job
 
-You can define your runtime environment with the tools and packages your job needs by implementing a dockefile. See this example of a [dockerfile file](examples/docker/basic_ubuntu/dockerfile).
+You can define your runtime environment with the tools and packages your job needs by implementing a dockefile. See this example of a [dockerfile file](examples/docker/basic_ubuntu/Dockerfile).
 
 You need to implement a single bash script that will perform the work on the cloud, see this [example](examples/scripts/run_job.sh).
 
