@@ -38,6 +38,9 @@ JOB?=grun-test
 # job version (allows to submit the same job multiple times)
 JOB_VERSION?=v1
 
+# complete job name with version
+JOB_TAG?=$(JOB)-$(JOB_VERSION)
+
 # run locally (TRUE or FALSE)
 RUN_LOCAL?=F
 

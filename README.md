@@ -140,6 +140,8 @@ Commands are automatically discovered from the makefile rules. Common commands i
 - `submit` - Submit a job to Google Cloud Batch
 - `download` - Download job results
 - `list_jobs` - List all jobs
+- `space` - Show space usage per job in bucket
+- `clean` - Delete jobs from bucket (with confirmation)
 
 ### Arguments
 Configuration arguments are automatically generated from `config.mk`. Each variable becomes a command-line option:
@@ -157,6 +159,11 @@ grun submit --job my-analysis --machine_type n1-highcpu-16 --disk_size_gb 200
 
 # Preview commands without executing
 grun --dry-run setup_docker
+
+# Check space usage and clean up jobs
+grun space                    # Show space usage for all jobs
+grun clean --job_tag all          # Delete all jobs (with confirmation)
+grun clean --job_tag old-test     # Delete specific job (with confirmation)
 
 # Get help and see all available options
 grun
@@ -321,6 +328,8 @@ Inside the running container, files are mounted at `/mnt/disks/share`:
 - `download` - Download job results
 - `list_jobs` - List all batch jobs
 - `show` - Show files in job bucket directory
+- `space` - Show space usage per job in bucket
+- `clean` - Delete jobs from bucket (with confirmation)
 
 ## Implementation
 

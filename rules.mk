@@ -1,8 +1,5 @@
 include config.mk
 
-# add version to job tag
-JOB_TAG?=$(JOB)-$(JOB_VERSION)
-
 # local bucket directory
 LOCAL_BUCKET_DIR?=local_bucket
 
@@ -130,3 +127,11 @@ show:
 # list jobs
 list_jobs:
 	gcloud batch jobs list --location=$(LOCATION)
+
+# show space usage per job in bucket
+space:
+	python3 scripts/space_usage.py --bucket_name $(BUCKET_NAME)
+
+# clean jobs from bucket (all jobs JOB is set to all)
+clean:
+	python3 scripts/clean_jobs.py --bucket_name $(BUCKET_NAME) --job_tag $(JOB_TAG)
