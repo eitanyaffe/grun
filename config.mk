@@ -45,7 +45,7 @@ JOB_TAG?=$(JOB)-$(JOB_VERSION)
 RUN_LOCAL?=F
 
 # user-specified script
-INPUT_SCRIPT?=examples/scripts/run_job.sh
+USER_SCRIPT?=examples/scripts/run_job.sh
 
 # input file
 INPUT_FILE?=examples/files/some_table.txt
