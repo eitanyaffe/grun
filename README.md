@@ -217,21 +217,6 @@ Run `grun --help` to see all available commands and options.
 | `USER_PARAMETERS` | Custom variables for your script | `"IFN=... PARAM1=..."` |
 | `OUTPUT_DIR` | Local directory for downloaded results | `output` |
 
-## Directory Structure
-
-When you run a job, grun creates this structure in your GCS bucket:
-```
-gs://your-bucket/
-├── scripts/
-│   └── run_job.sh         # Uploaded job script
-└── jobs/
-    └── my-test-job-v1/    # Job-specific directory
-        ├── some_table.txt # Uploaded input files
-        └── output/        # Job results (created by your script)
-```
-
-Inside the running docker container, the bukcet is mounted at `/mnt/disks/share`.
-
 ## Available Commands
 
 - `setup_docker` - Build and upload Docker image
@@ -246,6 +231,21 @@ Inside the running docker container, the bukcet is mounted at `/mnt/disks/share`
 - `show` - Show files in job bucket directory
 - `space` - Show space usage per job in bucket
 - `clean` - Delete jobs from bucket (with confirmation)
+
+## Directory Structure
+
+When you run a job, grun creates this structure in your GCS bucket:
+```
+gs://your-bucket/
+├── scripts/
+│   └── run_job.sh         # Uploaded job script
+└── jobs/
+    └── my-test-job-v1/    # Job-specific directory
+        ├── some_table.txt # Uploaded input files
+        └── output/        # Job results (created by your script)
+```
+
+Inside the running docker container, the bukcet is mounted at `/mnt/disks/share`.
 
 ## Implementation
 
