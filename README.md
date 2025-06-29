@@ -88,7 +88,7 @@ This builds the Docker image from `examples/docker/basic_ubuntu/Dockerfile` and 
 
 ### 2. Set Up Cloud Storage (once only)
 ```bash
-grun setup_bucket
+grun setup_bucket --user_script examples/scripts/run_job.sh
 ```
 This creates your GCS bucket and uploads the job script. **You only need to do this once** - the bucket persists and each job gets its own directory.
 
@@ -174,6 +174,8 @@ grun
 ### 1. Create a Dockerfile (once only)
 Define your runtime environment with the tools and packages your job needs.
 
+Example of dockerfile:
+
 ```dockerfile
 FROM ubuntu:22.04
 
@@ -228,23 +230,17 @@ echo "running analysis for job: $JOB"
 echo "using parameters: PARAM1=$PARAM1, PARAM2=$PARAM2"
 mkdir -p $OUTPUT_DIR
 
-# Your computation here
-# Access input files: $JOB_DIR/input_file.txt
+# Your computation here, analyze.py needs to be uploaded beforehand using the upload_code commands
+# Access input files: $JOB_DIR/some_table.txt
 # Write results to: $OUTPUT_DIR/results.txt
-python3 /my_code/analyze.py $JOB_DIR/data.csv --param1 $PARAM1 --param2 $PARAM2 > $OUTPUT_DIR/analysis.txt
+python3 $MNT_DIR/scripts/analyze.py --input $JOB_DIR/some_table.txt --param1 $PARAM1 --param2 $PARAM2 --output $OUTPUT_DIR/analysis.txt
 ```
 
-### 3. Update Configuration
-Edit `config.mk` to point to your files:
-```bash
-USER_SCRIPT=path/to/my_analysis.sh
-DOCKER_DIR=path/to/my_dockerfile_dir
-```
-See `config.mk` for a complete list of variables.
-### 4. Run Your Job
+### 3. Run Your Job
 ```bash
 grun setup_docker    # Build and upload image (once only)
-grun setup_bucket    # Prepare bucket (once only)
+grun setup_bucket --user_script examples/scripts/run_job.sh    # Prepare bucket (once only)
+grun setup_bucket --user_script examples/scripts/analyze.py    # Upload auxilary script (once only)
 grun upload_file --job my-analysis --input_file examples/files/some_table.txt
 grun submit --job my-analysis --ifn some_table.txt --param1 17
 grun download --job my-analysis
